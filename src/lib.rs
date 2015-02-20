@@ -184,6 +184,7 @@ pub use program::{Program, ProgramCreationError};
 pub use program::ProgramCreationError::{CompilationError, LinkingError, ShaderTypeNotSupported};
 pub use sync::{LinearSyncFence, SyncFence};
 pub use texture::{Texture, Texture2d};
+pub use transform_feedback::TransformFeedbackSession;
 pub use version::{Api, Version};
 
 use std::default::Default;
@@ -217,6 +218,7 @@ mod fbo;
 mod ops;
 mod sampler_object;
 mod sync;
+mod transform_feedback;
 mod util;
 mod version;
 mod vertex_array_object;

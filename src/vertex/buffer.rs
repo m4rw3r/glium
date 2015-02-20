@@ -2,6 +2,8 @@ use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
 use buffer::{self, Buffer};
+use program::Program;
+use transform_feedback;
 use vertex::{Vertex, VerticesSource, IntoVerticesSource};
 use vertex::format::VertexFormat;
 
@@ -120,6 +122,14 @@ impl<T: Vertex + 'static + Send> VertexBuffer<T> {
             },
             marker: PhantomData,
         })
+    }
+
+    /// Borrows the vertex buffer to start transform feedback on it.
+    pub fn as_transform_feedback_session_if_supported<'a>(&'a mut self, program: &'a Program)
+                            -> Option<transform_feedback::TransformFeedbackSession<'a>>
+    {
+        transform_feedback::new_session(self.buffer.buffer.get_display(), &mut self.buffer.buffer,
+                                        &self.buffer.bindings, program)
     }
 }
 

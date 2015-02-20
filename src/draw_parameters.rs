@@ -6,6 +6,7 @@ use Display;
 use DrawError;
 use Rect;
 use ToGlEnum;
+use TransformFeedbackSession;
 
 use std::default::Default;
 
@@ -336,8 +337,7 @@ impl ToGlEnum for PolygonMode {
 /// };
 /// ```
 ///
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct DrawParameters {
+pub struct DrawParameters<'a> {
     /// The function that the GPU will use to determine whether to write over an existing pixel
     /// on the target. Don't forget to set `depth_write` appropriately if you use a depth test.
     ///
@@ -438,10 +438,14 @@ pub struct DrawParameters {
     /// This parameter may seem pointless, but it can be useful when you use transform
     /// feedback or if you just use your shaders to write to a buffer.
     pub draw_primitives: bool,
+
+    /// If set, the primitives that are being output by the primitive assembly stage will be
+    /// written using the given session.
+    pub transform_feedback: Option<&'a TransformFeedbackSession<'a>>,
 }
 
-impl Default for DrawParameters {
-    fn default() -> DrawParameters {
+impl Default for DrawParameters<'static> {
+    fn default() -> DrawParameters<'static> {
         DrawParameters {
             depth_test: DepthTest::Overwrite,
             depth_write: false,
@@ -456,6 +460,7 @@ impl Default for DrawParameters {
             viewport: None,
             scissor: None,
             draw_primitives: true,
+            transform_feedback: None,
         }
     }
 }
