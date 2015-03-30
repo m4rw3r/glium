@@ -3,6 +3,7 @@
 ## Unreleased
 
  - Creating a texture with a specific format now properly checks for available extensions.
+ - Added stencil operations in `DrawParameters`.
 
 ## Version 0.2.0 (2015-03-30)
 
