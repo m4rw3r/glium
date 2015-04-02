@@ -2,6 +2,7 @@ use std::ptr;
 use std::sync::mpsc::Sender;
 use std::collections::hash_state::DefaultState;
 use std::collections::HashMap;
+use std::default::Default;
 
 use BufferExt;
 use ProgramExt;
@@ -571,7 +572,7 @@ fn bind_uniform(ctxt: &mut context::CommandContext,
     }
 }
 
-fn bind_texture_uniform(ctxt: &mut context::CommandContext,
+fn bind_texture_uniform(mut ctxt: &mut context::CommandContext,
                         samplers: &mut HashMap<SamplerBehavior, SamplerObject,
                                                DefaultState<util::FnvHasher>>,
                         texture: gl::types::GLuint,
@@ -589,34 +590,44 @@ fn bind_texture_uniform(ctxt: &mut context::CommandContext,
         None
     };
 
+    let sampler = sampler.unwrap_or(0);
+
     let current_texture = *active_texture;
     *active_texture += 1;
 
     unsafe {
-        // TODO: what if it's not supported?
-        let active_tex_enum = current_texture + gl::TEXTURE0;
-        if ctxt.state.active_texture != active_tex_enum {
-            ctxt.gl.ActiveTexture(current_texture + gl::TEXTURE0);
-            ctxt.state.active_texture = active_tex_enum;
-        }
-
-        ctxt.gl.BindTexture(bind_point, texture);
-
         if ctxt.version >= &Version(Api::Gl, 1, 5) {
             ctxt.gl.Uniform1i(location, current_texture as gl::types::GLint);
         } else {
             assert!(ctxt.extensions.gl_arb_shader_objects);
             ctxt.gl.Uniform1iARB(location, current_texture as gl::types::GLint);
         }
+    }
 
-        if let Some(sampler) = sampler {
+    if ctxt.state.texture_units.len() <= current_texture as usize {
+        ctxt.state.texture_units.resize(current_texture as usize + 1, Default::default());
+    }
+
+    if ctxt.state.texture_units[current_texture as usize].texture != texture ||
+       ctxt.state.texture_units[current_texture as usize].sampler != sampler
+    {
+        // TODO: what if it's not supported?
+        if ctxt.state.active_texture != current_texture {
+            unsafe { ctxt.gl.ActiveTexture(current_texture + gl::TEXTURE0) };
+            ctxt.state.active_texture = current_texture;
+        }
+
+        if ctxt.state.texture_units[current_texture as usize].texture != texture {
+            unsafe { ctxt.gl.BindTexture(bind_point, texture); }
+            ctxt.state.texture_units[current_texture as usize].texture = texture;
+        }
+
+        if ctxt.state.texture_units[current_texture as usize].sampler != sampler {
             assert!(ctxt.version >= &Version(Api::Gl, 3, 3) ||
                     ctxt.extensions.gl_arb_sampler_objects);
-            ctxt.gl.BindSampler(current_texture, sampler);
-        } else if ctxt.version >= &Version(Api::Gl, 3, 3) ||
-            ctxt.extensions.gl_arb_sampler_objects
-        {
-            ctxt.gl.BindSampler(current_texture, 0);
+
+            unsafe { ctxt.gl.BindSampler(current_texture, sampler); }
+            ctxt.state.texture_units[current_texture as usize].sampler = sampler;
         }
     }
 
