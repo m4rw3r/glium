@@ -266,6 +266,15 @@ trait ContextExt {
     fn make_current<'a>(&'a self) -> context::CommandContext<'a, 'a>;
 }
 
+/// Internal trait for programs.
+trait ProgramExt {
+    /// Access the list of uniforms of the state of a program.
+    ///
+    /// If the function returns `false`, then `glUniform` must be called. Otherwise it doesn't
+    /// need to.
+    fn compare_uniform_state(&self, uniform_location: u32, value: &uniforms::UniformValue) -> bool;
+}
+
 /// Area of a surface in pixels.
 ///
 /// In the OpenGL ecosystem, the (0,0) coordinate is at the bottom-left hand corner of the images.
